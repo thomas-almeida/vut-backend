@@ -1,6 +1,6 @@
 import type { CardPlayer } from "../card/card-player"
 
-export type Packs = {
+type Packs = {
   id: number,
   name: String,
   description: String,
@@ -8,3 +8,5 @@ export type Packs = {
   price: number
   isOpened: false
 }
+
+export default Packs

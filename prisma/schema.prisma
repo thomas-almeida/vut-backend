@@ -8,8 +8,101 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  username       String
+  password       String
+  profilePicture String?
+  level          Int
+  vutCoins       Int
+  vutDollars     Int
+  team           UserTeam @relation(fields: [userTeamId], references: [id])
+  packs          Packs[]
+  createdAt      DateTime @default(now())
+  userTeamId     Int
+}
+
+model UserTeam {
+  id            Int          @id @default(autoincrement())
+  ownerId       Int?
+  name          String?
+  pictureUrl    String?
+  startinLineUp CardPlayer[]
+  leagues       Leagues[]
+  User          User[]
+}
+
+model CardPlayer {
+  id            Int         @id @default(autoincrement())
+  nickName      String
+  name          String
+  vlrUrl        String
+  country       Country     @relation(fields: [countryId], references: [id])
+  team          Team        @relation(fields: [teamId], references: [id])
+  agents        Agent[]
+  stats         PlayerStats @relation(fields: [playerStatsId], references: [id])
+  countryId     Int
+  teamId        Int
+  playerStatsId Int
+  UserTeam      UserTeam?   @relation(fields: [userTeamId], references: [id])
+  userTeamId    Int?
+  Packs         Packs?      @relation(fields: [packsId], references: [id])
+  packsId       Int?
+}
+
+model Country {
+  id         Int          @id @default(autoincrement())
+  name       String
+  tag        String
+  flagUrl    String
+  CardPlayer CardPlayer[]
+}
+
+model Team {
+  id         Int          @id @default(autoincrement())
+  name       String
+  brandUlr   String
+  CardPlayer CardPlayer[]
+}
+
+model Agent {
+  id           Int         @id @default(autoincrement())
+  name         String
+  role         String
+  pictureUrl   String
+  CardPlayer   CardPlayer? @relation(fields: [cardPlayerId], references: [id])
+  cardPlayerId Int?
+}
+
+model PlayerStats {
+  id                    Int          @id @default(autoincrement())
+  overall               Int
+  averageCombatScore    Int
+  killsDeaths           Int
+  kast                  Int
+  averageDamagePerRound Int
+  killsPerRound         Int
+  firstKillsPerRound    Int
+  headShotRate          Int
+  clutchSuccess         Int
+  CardPlayer            CardPlayer[]
+}
+
+model Leagues {
+  id         Int       @id @default(autoincrement())
+  name       String
+  UserTeam   UserTeam? @relation(fields: [userTeamId], references: [id])
+  userTeamId Int?
+}
+
+model Packs {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String
+  content     CardPlayer[]
+  priceVUTC   Int
+  priceVUTD   Int
+  isOpened    Boolean
+  User        User?        @relation(fields: [userId], references: [id])
+  userId      Int?
 }
