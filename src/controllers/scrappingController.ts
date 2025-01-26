@@ -1,40 +1,91 @@
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
-const vlr = 'https://www.vlr.gg/stats/?event_group_id=all&event_id=all&region=all&min_rounds=200&min_rating=1550&agent=all&map_id=all&timespan=90d'
+interface Team {
+  name: string
+  image: string | null
+  players: string[]
+}
+
+const vlr = 'https://www.vlr.gg/event/stats/2274/champions-tour-2025-americas-kickoff?exclude=&min_rounds=0&agent=all'
+const event = 'https://www.vlr.gg/event/2274/champions-tour-2025-americas-kickoff'
+
+async function scrapTeamsByLeague(url: string) {
+  try {
+    const { data } = await axios.get(url)
+    const $ = cheerio.load(data)
+
+    const rows = $(".event-teams-container")
+    const teams: Team[] = []
+
+    rows.each((_, row) => {
+      const teamCard = $(row).find(".wf-card.event-team")
+
+      teamCard.each((_, cell) => {
+        // Nome do time
+        const teamName = $(cell).find(".event-team-name").text().trim()
+
+        // URL da imagem do time
+        const teamImage = $(cell).find(".event-team-players-mask img").attr("src")
+        const imageURL = teamImage ? `https:${teamImage}` : null
+
+        // Jogadores do time
+        const players: string[] = []
+        $(cell)
+          .find(".event-team-players-item")
+          .each((_, player) => {
+            const playerName = $(player).text().trim()
+            players.push(playerName)
+          })
+
+        // Criar objeto do time
+        const team: Team = {
+          name: teamName,
+          image: imageURL,
+          players,
+        }
+
+        // Adicionar time à lista
+        teams.push(team)
+      })
+    })
+
+    console.log(teams)
+  } catch (error) {
+    console.error("Erro ao buscar os dados:", error)
+    return []
+  }
+}
 
 async function scrapPage(url: string) {
   try {
-    // Faz a requisição para a página
+
     const { data } = await axios.get(url)
-    // Carrega o HTML com o cheerio
     const $ = cheerio.load(data)
 
-    // Seleciona a tabela
-    const rows = $('table tbody tr') // Cada linha de dados na tabela
+    const rows = $('table tbody tr')
 
     rows.each(async (i, row) => {
       const rowData: string[] = []
 
-      // Itera pelas células <td> da linha
       $(row).find('td').each((j, cell) => {
         rowData.push($(cell).text().trim())
       })
 
-      // Verifica se a linha contém dados suficientes
       if (rowData.length >= 18) {
-        // Separando o nome e o time
-        const nameWithTeam = rowData[0].split(/\s+/) // Divide pela quebra de espaço ou nova linha
-        const name = nameWithTeam.slice(0, -1).join(' ') // Junta todos os elementos exceto o último para formar o nome
-        const team = nameWithTeam.slice(-1).join(' ') // O último elemento é o time
+        const nameWithTeam = rowData[0].split(/\s+/)
+        const name = nameWithTeam.slice(0, -1).join(' ')
+        const team = nameWithTeam.slice(-1).join(' ')
 
         const playerLink = $(row).find('a[href^="/player"]').attr('href')
         const countryClass = $(row).find('i.flag').attr('class')?.split(' ').pop()
+        const mainAgent = $(row).find('.mod-agents div :nth-child(1)').attr('src')
 
         const playerData = {
           name: name,
           team: team,
           playerLink: `https://www.vlr.gg${playerLink}`,
+          mainAgent: `https://www.vlr.gg${mainAgent}`,
           country: `https://www.vlr.gg/img/icons/flags/16/${countryClass?.replace('mod-', '')}.png`,
           rating: parseFloat(rowData[3]) || 0,
           acs: parseFloat(rowData[4]) || 0,
@@ -58,4 +109,6 @@ async function scrapPage(url: string) {
   }
 }
 
+
+//scrapTeamsByLeague(event)
 scrapPage(vlr)
