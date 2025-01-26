@@ -34,7 +34,6 @@ model UserTeam {
 
 model CardPlayer {
   id            Int         @id @default(autoincrement())
-  nickName      String
   name          String
   vlrUrl        String
   country       Country     @relation(fields: [countryId], references: [id])
